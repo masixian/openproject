@@ -179,7 +179,7 @@ module OpenProject
 
     config.active_job.queue_adapter = :delayed_job
 
-    config.action_controller.asset_host = OpenProject::Configuration::AssetHost.value
+    config.action_controller.asset_host = OpenProject::Configuration['rails_asset_host']
 
     config.log_level = OpenProject::Configuration['log_level'].to_sym
 
