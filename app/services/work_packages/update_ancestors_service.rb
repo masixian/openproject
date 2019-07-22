@@ -86,9 +86,8 @@ class WorkPackages::UpdateAncestorsService
       .distinct(true) # Be explicit that this is a distinct (wrt ID) query
       .includes(:status).to_a
 
-    inherit_done_ratio(ancestor, leaves)
-
-    inherit_estimated_hours(ancestor, leaves)
+    inherit_done_ratio(ancestor, leaves) if attributes.include? :done_ratio
+    derive_estimated_hours(ancestor, leaves) if attributes.include? :estimated_hours
   end
 
   def set_journal_note(work_packages)
@@ -156,13 +155,18 @@ class WorkPackages::UpdateAncestorsService
     summands.sum
   end
 
-  def inherit_estimated_hours(ancestor, leaves)
-    ancestor.estimated_hours = all_estimated_hours(leaves).sum.to_f
-    ancestor.estimated_hours = nil if ancestor.estimated_hours.zero?
+  def derive_estimated_hours(ancestor, leaves)
+    ancestor.derived_estimated_hours = not_zero all_estimated_hours(leaves, derived: true).sum.to_f
   end
 
-  def all_estimated_hours(work_packages)
-    work_packages.map(&:estimated_hours).reject { |hours| hours.to_f.zero? }
+  def not_zero(value)
+    value unless value.zero?
+  end
+
+  def all_estimated_hours(work_packages, derived: false)
+    work_packages
+      .map { |wp| (derived && wp.derived_estimated_hours) || wp.estimated_hours }
+      .reject { |hours| hours.to_f.zero? }
   end
 
   ##
@@ -191,6 +195,6 @@ class WorkPackages::UpdateAncestorsService
   end
 
   def selected_leaf_attributes
-    %i(id done_ratio estimated_hours status_id)
+    %i(id done_ratio derived_estimated_hours estimated_hours status_id)
   end
 end

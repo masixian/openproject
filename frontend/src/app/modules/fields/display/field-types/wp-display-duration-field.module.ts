@@ -37,7 +37,51 @@ export class DurationDisplayField extends DisplayField {
     return this.timezoneService.formattedDuration(this.value);
   }
 
+  public get derivedValue():string {
+    return this.resource["derived" + this.name.charAt(0).toUpperCase() + this.name.slice(1)];
+  }
+
+  public get derivedValueString():string {
+    return this.timezoneService.formattedDuration(this.derivedValue);
+  }
+
+  public render(element:HTMLElement, displayText:string):void {
+    var actual = this.timezoneService.toHours(this.value);
+
+    if (actual !== 0) {
+      this.renderActual(element, displayText);
+    }
+
+    if (this.timezoneService.toHours(this.derivedValue) !== 0) {
+      this.renderDerived(element, this.derivedValueString, actual !== 0);
+    }
+  }
+
+  public renderActual(element:HTMLElement, displayText:string):void {
+    const span = document.createElement('span');
+
+    span.textContent = displayText;
+    span.title = this.valueString;
+
+    element.appendChild(span);
+  }
+
+  public renderDerived(element:HTMLElement, displayText:string, actualPresent:boolean):void {
+    const span = document.createElement('span');
+
+    span.setAttribute('title', this.texts.empty);
+    span.textContent = "(" + (actualPresent ? "+" : "") + displayText + ")";
+    span.title = this.derivedValueString + " (value derived from children)";
+    span.classList.add("-derived");
+
+    element.appendChild(span);
+  }
+
+  public get title():string|null {
+    return null; // we want to render separate titles ourselves
+  }
+
   public isEmpty():boolean {
-    return this.timezoneService.toHours(this.value) === 0;
+    return this.timezoneService.toHours(this.value) === 0 && this.timezoneService.toHours(this.derivedValue) === 0;
   }
 }

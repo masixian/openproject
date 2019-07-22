@@ -370,6 +370,14 @@ module API
                  end,
                  render_nil: true
 
+        property :derived_estimated_time,
+                 exec_context: :decorator,
+                 getter: ->(*) do
+                   datetime_formatter.format_duration_from_hours(represented.derived_estimated_hours,
+                                                                 allow_nil: true)
+                 end,
+                 render_nil: true
+
         property :spent_time,
                  exec_context: :decorator,
                  getter: ->(*) do

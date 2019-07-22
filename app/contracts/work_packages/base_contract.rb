@@ -61,7 +61,7 @@ module WorkPackages
 
     attribute :estimated_hours,
               writeable: ->(*) {
-                model.leaf?
+                true
               }
 
     attribute :parent_id,
