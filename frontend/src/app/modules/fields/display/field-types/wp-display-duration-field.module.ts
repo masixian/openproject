@@ -32,27 +32,48 @@ import {TimezoneService} from 'core-components/datetime/timezone.service';
 export class DurationDisplayField extends DisplayField {
 
   private timezoneService:TimezoneService = this.$injector.get(TimezoneService);
+  private derivedText = this.I18n.t('js.label_value_derived_from_children');
 
   public get valueString() {
     return this.timezoneService.formattedDuration(this.value);
   }
 
-  public get derivedValue():string {
-    return this.resource["derived" + this.name.charAt(0).toUpperCase() + this.name.slice(1)];
+  /**
+   * Duration fields may have an additional derived value
+   */
+  public get derivedPropertyName() {
+    return "derived" + this.name.charAt(0).toUpperCase() + this.name.slice(1);
+  }
+
+  public get derivedValue():string|null {
+    return this.resource[this.derivedPropertyName];
   }
 
   public get derivedValueString():string {
-    return this.timezoneService.formattedDuration(this.derivedValue);
+    const value = this.derivedValue;
+
+    if (value) {
+      return this.timezoneService.formattedDuration(value);
+    } else {
+      return this.placeholder;
+    }
   }
 
   public render(element:HTMLElement, displayText:string):void {
-    var actual = this.timezoneService.toHours(this.value);
+    if (this.isEmpty()) {
+      element.textContent = this.placeholder;
+      return;
+    }
+
+    let value = this.value;
+    let actual:number = (value && this.timezoneService.toHours(value)) || 0;
 
     if (actual !== 0) {
       this.renderActual(element, displayText);
     }
 
-    if (this.timezoneService.toHours(this.derivedValue) !== 0) {
+    let derived = this.derivedValue;
+    if (derived && this.timezoneService.toHours(derived) !== 0) {
       this.renderDerived(element, this.derivedValueString, actual !== 0);
     }
   }
@@ -71,7 +92,7 @@ export class DurationDisplayField extends DisplayField {
 
     span.setAttribute('title', this.texts.empty);
     span.textContent = "(" + (actualPresent ? "+" : "") + displayText + ")";
-    span.title = this.derivedValueString + " (value derived from children)";
+    span.title = `${this.derivedValueString} ${this.derivedText}`;
     span.classList.add("-derived");
 
     element.appendChild(span);
@@ -82,6 +103,13 @@ export class DurationDisplayField extends DisplayField {
   }
 
   public isEmpty():boolean {
-    return this.timezoneService.toHours(this.value) === 0 && this.timezoneService.toHours(this.derivedValue) === 0;
+    const value = this.value;
+    const derived = this.derivedValue;
+
+    const valueEmpty = !value || this.timezoneService.toHours(value) === 0;
+    const derivedEmpty = !derived || this.timezoneService.toHours(derived) === 0;
+
+
+    return valueEmpty && derivedEmpty;
   }
 }
