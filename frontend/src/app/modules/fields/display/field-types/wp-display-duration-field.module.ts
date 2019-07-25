@@ -95,6 +95,10 @@ export class DurationDisplayField extends DisplayField {
     span.title = `${this.derivedValueString} ${this.derivedText}`;
     span.classList.add("-derived");
 
+    if (actualPresent) {
+      span.classList.add("-with-actual");
+    }
+
     element.appendChild(span);
   }
 
