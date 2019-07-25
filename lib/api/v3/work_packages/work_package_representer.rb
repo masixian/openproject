@@ -553,6 +553,11 @@ module API
                                                                                    allow_nil: true)
         end
 
+        def derived_estimated_time=(value)
+          represented.derived_estimated_hours = datetime_formatter
+            .parse_duration_to_hours(value, 'derivedEstimatedTime', allow_nil: true)
+        end
+
         def spent_time=(value)
           # noop
         end
