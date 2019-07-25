@@ -73,21 +73,34 @@ class WorkPackages::UpdateAncestorsService
     parent = WorkPackage.find(previous_parent_id)
 
     ([parent] + parent.ancestors).each do |ancestor|
-      inherit_attributes(ancestor, %i(estimated_hours done_ratio))
+      # pass :parent to force update of all inherited attributes
+      inherit_attributes(ancestor, %i(parent))
     end.select(&:changed?)
   end
 
   def inherit_attributes(ancestor, attributes)
     return unless attributes_justify_inheritance?(attributes)
 
-    leaves = ancestor
+    leaves = leaves_for_ancestor ancestor
+
+    inherit_from_leaves ancestor: ancestor, leaves: leaves, attributes: attributes
+  end
+
+  def leaves_for_ancestor(ancestor)
+    ancestor
       .leaves
       .select(selected_leaf_attributes)
       .distinct(true) # Be explicit that this is a distinct (wrt ID) query
       .includes(:status).to_a
+  end
 
-    inherit_done_ratio(ancestor, leaves) if attributes.include? :done_ratio
-    derive_estimated_hours(ancestor, leaves) if attributes.include? :estimated_hours
+  def inherit_from_leaves(ancestor:, leaves:, attributes:)
+    inherit_done_ratio ancestor, leaves if inherit? attributes, :done_ratio
+    derive_estimated_hours ancestor, leaves if inherit? attributes, :estimated_hours
+  end
+
+  def inherit?(attributes, attribute)
+    [attribute, :parent].any? { |attr| attributes.include? attr }
   end
 
   def set_journal_note(work_packages)
